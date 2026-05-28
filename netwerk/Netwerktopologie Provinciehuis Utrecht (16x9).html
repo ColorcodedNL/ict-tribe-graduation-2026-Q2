@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<title>Netwerktopologie Provinciehuis Utrecht — 16:9</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0f1620;
+    --ink-2:#3a4452;
+    --ink-3:#6c7787;
+    --paper:#ffffff;
+    --line:#cdd3db;
+    --line-soft:#e6e9ee;
+
+    --fiber:#2f9e6a;
+    --trunk:#2a6fdb;
+    --access:#8892a0;
+    --poe:#ea8a2c;
+    --wan:#d23a3a;
+    --ha:#7a4ab8;
+
+    --layer1:#d23a3a;   /* WAN red */
+    --layer2:#ea8a2c;   /* EDGE orange */
+    --layer3:#2a6fdb;   /* CORE blue */
+    --layer4:#2f9e6a;   /* DISTRIBUTION green */
+    --layer5:#7a4ab8;   /* ACCESS purple */
+
+    --vlan10:#5d6b7d;
+    --vlan20:#3b7a57;
+    --vlan30:#a04ea0;
+    --vlan40:#c14b4b;
+    --vlan100:#2a6fdb;
+    --vlan200:#1f93a6;
+    --vlan300:#4b9b3a;
+    --vlan400:#d6a800;
+    --vlan500:#8957e8;
+    --vlan600:#b56b00;
+    --vlan700:#3a3a3a;
+    --vlan800:#0090a8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:#fff;font-family:'Manrope',system-ui,sans-serif;color:var(--ink);}
+
+  .page{
+    width:1920px;height:1080px;
+    position:relative;background:#fff;overflow:hidden;
+    padding:0;
+  }
+
+  /* ============== HEADER ============== */
+  .s-head{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:1.5px solid var(--ink);padding:18px 36px 10px;margin:0;
+    height:74px;
+  }
+  .s-head h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.2px;line-height:1.1;}
+  .s-head .sub{
+    margin-top:3px;font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--ink-3);letter-spacing:.4px;text-transform:uppercase;
+  }
+  .s-head .meta{
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-3);
+    text-align:right;line-height:1.6;
+  }
+  .s-head .meta b{color:var(--ink-2);font-weight:600;}
+
+  /* ============== BODY ============== */
+  .body{
+    display:grid;grid-template-columns: 1fr 460px;
+    height:calc(1080px - 74px - 30px);
+    gap:0;
+    padding:8px 0 0;
+  }
+
+
+
+  /* ============== STAGE (topology — scaled) ============== */
+  .stage-wrap{
+    position:relative;
+    overflow:hidden;
+    height:100%;
+  }
+  .stage{
+    position:absolute;
+    left:50%; top:0;
+    transform:translateX(-50%) scale(0.66);
+    transform-origin:top center;
+    width:1664px;height:1380px;
+  }
+
+  /* layer separators (subtle, in the scaled stage) */
+
+  /* device card */
+  .dev{
+    position:absolute;background:#fff;border:1.2px solid var(--ink);
+    border-radius:6px;padding:6px 8px;
+    display:flex;gap:6px;align-items:center;
+    font-size:11.5px;font-weight:600;
+    box-shadow:1.5px 1.5px 0 0 var(--ink);z-index:2;
+  }
+  .dev .icn{width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;}
+  .dev .lbl{display:flex;flex-direction:column;line-height:1.15;min-width:0;}
+  .dev .lbl small{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-3);font-weight:500;margin-top:1px;white-space:nowrap;}
+  .dev.tight{padding:4px 6px;font-size:10.5px;}
+  .dev.tight .icn{width:20px;height:20px;}
+  .dev .role{
+    position:absolute;left:-2px;top:-9px;background:var(--ink);color:#fff;
+    font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;
+    padding:1px 5px;border-radius:3px;letter-spacing:.5px;white-space:nowrap;
+  }
+  .dev.cloud{border-radius:30px;}
+  .dev.fw{background:#fff;}
+  .dev.core{background:#f0f6ff;}
+  .dev.poe{background:#fff7ec;}
+  .dev.endpoint{background:#fafbfc;border-color:var(--ink-2);box-shadow:1.5px 1.5px 0 0 var(--ink-2);}
+
+  svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+
+  .pill{
+    position:absolute;background:#fff;font-family:'JetBrains Mono',monospace;font-size:9px;
+    padding:1px 6px;border-radius:9px;border:1px solid var(--line);color:var(--ink-2);
+    z-index:3;white-space:nowrap;
+  }
+  .pill.fiber{border-color:var(--fiber);color:var(--fiber);}
+  .pill.trunk{border-color:var(--trunk);color:var(--trunk);}
+  .pill.poe{border-color:var(--poe);color:var(--poe);}
+  .pill.wan{border-color:var(--wan);color:var(--wan);}
+  .pill.ha{border-color:var(--ha);color:var(--ha);}
+
+  .stacked-bg{position:absolute;background:#eceff3;border:1.2px solid var(--ink);border-radius:6px;z-index:1;}
+  .stacked-bg.l2{background:#f6f7f9;}
+
+  .frame{position:absolute;border:1px dashed var(--line);border-radius:6px;background:#fafbfcaa;}
+  .frame .frame-lbl{
+    position:absolute;top:-9px;left:14px;background:var(--paper);
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--ink-3);padding:0 6px;
+  }
+  .frame.dark{background:#0f1620;border-color:#0f1620;}
+  .frame.dark .frame-lbl{background:#0f1620;color:#cdd3db;border:1px solid #2a2f38;border-radius:3px;}
+
+  .note{
+    position:absolute;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.55;color:var(--ink-2);
+    border-left:2px solid var(--ink);padding:4px 10px;background:#fff;z-index:2;
+  }
+  .note b{color:var(--ink);font-weight:700;}
+  .note.fiber{border-left-color:var(--fiber);}
+  .note.fiber b{color:var(--fiber);}
+  .note.wan{border-left-color:var(--wan);}
+  .note.wan b{color:var(--wan);}
+
+  /* ============== LEGEND (right column) ============== */
+  .legend{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows: auto auto 1fr;
+    gap:10px;
+    padding:0 24px 0 6px;
+    height:100%;
+  }
+  .lcard{
+    border:1.2px solid var(--line);border-radius:6px;background:#fff;
+    padding:10px 14px;display:flex;flex-direction:column;gap:8px;
+    overflow:hidden;
+  }
+  .lcard.wide{grid-column: span 2;}
+  .lcard h3{
+    margin:0;font-size:10.5px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--ink-3);font-family:'JetBrains Mono',monospace;font-weight:600;
+    border-bottom:1px dashed var(--line);padding-bottom:5px;
+  }
+  .lines-legend{display:flex;flex-direction:column;gap:5px;font-size:11px;}
+  .lines-legend .row{display:flex;align-items:center;gap:9px;}
+  .lines-legend .swl{width:34px;height:0;border-top:2.4px solid;flex:none;}
+  .lines-legend .swl.dashed{border-top-style:dashed;border-top-width:2px;}
+
+  .vlan-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:3px 10px;font-size:10px;font-family:'JetBrains Mono',monospace;}
+  .vlan-grid .v{display:flex;gap:6px;align-items:center;border-bottom:1px dotted var(--line);padding:2px 0;white-space:nowrap;}
+  .vlan-grid .v .chip{width:22px;height:13px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;color:#fff;font-weight:700;flex:none;}
+  .vlan-grid .v span{color:var(--ink-2);}
+
+  .ip-block{font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.6;color:var(--ink-2);}
+  .ip-block code{background:#f3f5f8;padding:1px 4px;border-radius:3px;font-size:10px;color:var(--ink);}
+  .ip-block .ex{background:#fff8e1;border:1px dashed #d8b400;padding:5px 8px;border-radius:4px;margin-top:5px;color:var(--ink);}
+
+  .icon-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;font-size:10px;}
+  .icon-grid .ig{display:flex;align-items:center;gap:6px;border:1px solid var(--line-soft);padding:3px 5px;border-radius:4px;background:#fff;}
+  .icon-grid .ig svg{width:22px;height:16px;flex:none;}
+
+  /* ============== FOOTER ============== */
+  .s-foot{
+    position:absolute;left:36px;right:36px;bottom:6px;
+    display:flex;justify-content:space-between;
+    font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-3);
+    border-top:1px solid var(--line);padding-top:6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ============ HEADER ============ -->
+  <header class="s-head">
+    <div>
+      <h1>Netwerktopologie — Provinciehuis Utrecht</h1>
+      <div class="sub">Two-tier · Cisco Meraki + FortiGate · ICT Tribe Almere / SLTN Group · mei 2026</div>
+    </div>
+    <div class="meta" style="white-space:nowrap;">
+      <b>Doc</b>&nbsp; NWO-PHU-001 &nbsp;·&nbsp; <b>Rev</b>&nbsp; B · 27-05-2026<br/>
+      <b>Schaal</b>&nbsp; logisch, niet op schaal
+    </div>
+  </header>
+
+  <!-- ============ BODY ============ -->
+  <div class="body">
+
+    <!-- ===== STAGE ===== -->
+    <div class="stage-wrap">
+      <div class="stage">
+
+        <svg class="wires" viewBox="0 0 1664 1380" preserveAspectRatio="none">
+          <!-- WAN -->
+          <path d="M 260 150 V 200 H 500 V 460" stroke="var(--wan)" stroke-width="2.5" fill="none"/>
+          <path d="M 260 150 V 200 H 820 V 460" stroke="var(--wan)" stroke-width="2.2" fill="none" opacity=".55"/>
+          <path d="M 660 150 V 220 H 520 V 460" stroke="var(--wan)" stroke-width="2.2" fill="none" opacity=".55"/>
+          <path d="M 660 150 V 220 H 840 V 460" stroke="var(--wan)" stroke-width="2.5" fill="none"/>
+          <path d="M 1020 150 V 240 H 540 V 460" stroke="var(--wan)" stroke-width="2.2" stroke-dasharray="6 3" fill="none"/>
+          <path d="M 1020 150 V 240 H 800 V 460" stroke="var(--wan)" stroke-width="2.2" stroke-dasharray="6 3" fill="none"/>
+
+          <!-- Core -> FW -->
+          <path d="M 500 460 V 410 H 380 V 320" stroke="var(--trunk)" stroke-width="2" fill="none"/>
+          <path d="M 500 460 V 410 H 700 V 320" stroke="var(--trunk)" stroke-width="1.8" fill="none" opacity=".55"/>
+          <path d="M 820 460 V 410 H 380 V 320" stroke="var(--trunk)" stroke-width="1.8" fill="none" opacity=".55"/>
+          <path d="M 820 460 V 410 H 700 V 320" stroke="var(--trunk)" stroke-width="2" fill="none"/>
+
+          <path d="M 460 290 H 620" stroke="var(--ha)" stroke-width="2" stroke-dasharray="5 4" fill="none"/>
+          <path d="M 580 495 H 740" stroke="var(--trunk)" stroke-width="2.5" fill="none"/>
+
+          <!-- Core -> distribution -->
+          <path d="M 500 540 V 650 H 180 V 720" stroke="var(--trunk)" stroke-width="2" fill="none"/>
+          <path d="M 820 540 V 660 H 180 V 720" stroke="var(--trunk)" stroke-width="2" fill="none" opacity=".45"/>
+          <path d="M 500 540 V 660 H 380 V 720" stroke="var(--trunk)" stroke-width="2" fill="none"/>
+          <path d="M 820 540 V 670 H 380 V 720" stroke="var(--trunk)" stroke-width="2" fill="none" opacity=".45"/>
+          <path d="M 500 540 V 670 H 580 V 720" stroke="var(--trunk)" stroke-width="2" fill="none"/>
+          <path d="M 820 540 V 680 H 580 V 720" stroke="var(--trunk)" stroke-width="2" fill="none" opacity=".45"/>
+
+          <path d="M 131 800 V 870 V 910" stroke="var(--access)" stroke-width="1.5" fill="none"/>
+          <path d="M 256 800 V 870 V 910" stroke="var(--access)" stroke-width="1.5" fill="none"/>
+          <path d="M 382 800 V 910" stroke="var(--access)" stroke-width="1.5" fill="none"/>
+          <path d="M 484 800 V 910" stroke="var(--access)" stroke-width="1.5" fill="none"/>
+          <path d="M 591 800 V 910" stroke="var(--access)" stroke-width="1.5" fill="none"/>
+
+          <path d="M 580 800 V 815 H 660" stroke="var(--trunk)" stroke-width="1.7" fill="none"/>
+          <path d="M 580 800 V 870 H 660" stroke="var(--trunk)" stroke-width="1.7" fill="none"/>
+          <path d="M 580 800 V 925 H 660" stroke="var(--trunk)" stroke-width="1.7" fill="none"/>
+          <path d="M 580 800 V 980 H 660" stroke="var(--trunk)" stroke-width="1.7" fill="none"/>
+
+          <path d="M 800 815 H 845 V 1010 H 870" stroke="var(--poe)" stroke-width="2" fill="none"/>
+          <path d="M 800 870 H 850 V 1055 H 870" stroke="var(--poe)" stroke-width="2" fill="none"/>
+          <path d="M 800 925 H 855 V 1100 H 870" stroke="var(--poe)" stroke-width="2" fill="none"/>
+          <path d="M 800 980 H 860 V 1145 H 870" stroke="var(--poe)" stroke-width="2" fill="none"/>
+
+          <path d="M 590 800 V 980" stroke="var(--access)" stroke-width="1.5" fill="none"/>
+
+          <!-- Fiber to building -->
+          <path d="M 500 540 V 620 H 1240 V 760" stroke="var(--fiber)" stroke-width="2.5" fill="none"/>
+          <path d="M 820 540 V 640 H 1240 V 760" stroke="var(--fiber)" stroke-width="2" stroke-dasharray="5 4" fill="none"/>
+          <path d="M 500 540 V 600 H 1500 V 760" stroke="var(--fiber)" stroke-width="2" stroke-dasharray="5 4" fill="none"/>
+          <path d="M 820 540 V 620 H 1500 V 760" stroke="var(--fiber)" stroke-width="2.5" fill="none"/>
+
+          <path d="M 1260 880 V 950 H 1110 V 980" stroke="var(--access)" stroke-width="1.5" fill="none"/>
+          <path d="M 1260 880 V 950 H 1211 V 980" stroke="var(--poe)" stroke-width="2" fill="none"/>
+          <path d="M 1260 880 V 950 H 1303 V 980" stroke="var(--poe)" stroke-width="2" stroke-dasharray="3 3" fill="none"/>
+          <path d="M 1260 880 V 1015 H 1171 V 1040" stroke="var(--access)" stroke-width="1.4" stroke-dasharray="2 3" fill="none"/>
+
+          <path d="M 1520 880 V 950 H 1430 V 980" stroke="var(--access)" stroke-width="1.5" fill="none"/>
+          <path d="M 1520 880 V 950 H 1531 V 980" stroke="var(--poe)" stroke-width="2" fill="none"/>
+          <path d="M 1520 880 V 950 H 1623 V 980" stroke="var(--poe)" stroke-width="2" stroke-dasharray="3 3" fill="none"/>
+          <path d="M 1520 880 V 1015 H 1491 V 1040" stroke="var(--access)" stroke-width="1.4" stroke-dasharray="2 3" fill="none"/>
+
+          <path d="M 1370 800 V 880" stroke="var(--fiber)" stroke-width="1.2" stroke-dasharray="2 3" fill="none" opacity=".6"/>
+        </svg>
+
+
+        <!-- WAN -->
+        <div class="dev cloud" style="left:180px;top:90px;width:160px;">
+          <div class="icn"><svg viewBox="0 0 32 22" width="30" height="22"><path d="M7 17 q-5 0 -5 -4 q0 -4 5 -4 q1 -5 7 -5 q6 0 7 5 q6 0 6 4 q0 4 -6 4 z" fill="#fff" stroke="#d23a3a" stroke-width="1.4"/></svg></div>
+          <div class="lbl">ISP-A<small>WAN-A · VLAN 13 · /30</small></div>
+        </div>
+        <div class="dev cloud" style="left:580px;top:90px;width:160px;">
+          <div class="icn"><svg viewBox="0 0 32 22" width="30" height="22"><path d="M7 17 q-5 0 -5 -4 q0 -4 5 -4 q1 -5 7 -5 q6 0 7 5 q6 0 6 4 q0 4 -6 4 z" fill="#fff" stroke="#d23a3a" stroke-width="1.4"/></svg></div>
+          <div class="lbl">ISP-B<small>WAN-B · VLAN 14 · /30</small></div>
+        </div>
+        <div class="dev cloud" style="left:930px;top:90px;width:180px;">
+          <div class="icn"><svg viewBox="0 0 32 22" width="30" height="22"><path d="M7 17 q-5 0 -5 -4 q0 -4 5 -4 q1 -5 7 -5 q6 0 7 5 q6 0 6 4 q0 4 -6 4 z" fill="#fff" stroke="#d23a3a" stroke-width="1.4"/></svg></div>
+          <div class="lbl">Diginetwerk<small>SD-WAN lid · VLAN 15</small></div>
+        </div>
+
+        <div class="note wan" style="left:1180px;top:80px;width:440px;">
+          <b>WAN-aansluiting</b><br/>
+          Twee fysieke ISP-uplinks: <b>ISP-A</b> (VLAN 13) en <b>ISP-B</b> (VLAN 14), beide /30. Beide termineren op
+          <b>CORE-A</b> en <b>CORE-B</b>; cores trunken WAN-VLANs door naar <b>FGT-A/B</b> — <b>SD-WAN failover</b>.<br/>
+          <b>Diginetwerk</b> is een besloten overheidsnetwerk (Logius/BZK). Termineert als aparte WAN-interface op de core en fungeert als SD-WAN-lid op de FortiGate.
+        </div>
+
+        <!-- EDGE -->
+        <div class="dev fw" style="left:290px;top:260px;width:180px;">
+          <div class="role">EDGE</div>
+          <div class="icn"><svg viewBox="0 0 30 22" width="28" height="22"><rect x="4" y="4" width="22" height="14" fill="#fff" stroke="#0f1620" stroke-width="1.4"/><path d="M0 7h4M0 11h4M0 15h4M26 7h4M26 11h4M26 15h4" stroke="#d23a3a" stroke-width="1.6"/><circle cx="9" cy="11" r="1.3" fill="#2f9e6a"/><circle cx="15" cy="11" r="1.3" fill="#2f9e6a"/></svg></div>
+          <div class="lbl">FGT-A<small>FortiGate 600F · ACTIVE</small></div>
+        </div>
+        <div class="dev fw" style="left:610px;top:260px;width:180px;">
+          <div class="role">EDGE</div>
+          <div class="icn"><svg viewBox="0 0 30 22" width="28" height="22"><rect x="4" y="4" width="22" height="14" fill="#fff" stroke="#0f1620" stroke-width="1.4"/><path d="M0 7h4M0 11h4M0 15h4M26 7h4M26 11h4M26 15h4" stroke="#d23a3a" stroke-width="1.6"/><circle cx="9" cy="11" r="1.3" fill="#8892a0"/><circle cx="15" cy="11" r="1.3" fill="#8892a0"/></svg></div>
+          <div class="lbl">FGT-B<small>FortiGate 600F · STANDBY</small></div>
+        </div>
+        <div class="pill ha" style="left:485px;top:282px;">HA-heartbeat</div>
+
+        <!-- CORE -->
+        <div class="dev core" style="left:410px;top:470px;width:180px;">
+          <div class="role">CORE</div>
+          <div class="icn"><svg viewBox="0 0 32 22" width="30" height="22"><rect x="3" y="4" width="26" height="14" fill="#f0f6ff" stroke="#0f1620" stroke-width="1.4"/><path d="M8 14 L20 8 M20 8 l-3 0 M20 8 l0 3" stroke="#2a6fdb" stroke-width="1.4" fill="none"/></svg></div>
+          <div class="lbl">CORE-A<small>MS425-32 · L3 · HSRP ACT</small></div>
+        </div>
+        <div class="dev core" style="left:730px;top:470px;width:180px;">
+          <div class="role">CORE</div>
+          <div class="icn"><svg viewBox="0 0 32 22" width="30" height="22"><rect x="3" y="4" width="26" height="14" fill="#f0f6ff" stroke="#0f1620" stroke-width="1.4"/><path d="M8 14 L20 8 M20 8 l-3 0 M20 8 l0 3" stroke="#2a6fdb" stroke-width="1.4" fill="none"/></svg></div>
+          <div class="lbl">CORE-B<small>MS425-32 · L3 · HSRP STBY</small></div>
+        </div>
+        <div class="pill trunk" style="left:585px;top:483px;">interlink · 10.255.0.0/31</div>
+        <div class="pill trunk" style="left:430px;top:396px;">trunk · VLAN 13 / 14</div>
+
+        <!-- SERVER ROOM -->
+        <div class="frame dark" style="left:60px;top:695px;width:760px;height:330px;">
+          <span class="frame-lbl">Serverruimte · BG · VLAN 10–12 · 4 racks (Rack 3 = FW+Core hierboven)</span>
+        </div>
+
+        <div class="dev" style="left:110px;top:720px;width:140px;">
+          <div class="role" style="background:#a04ea0;">RACK 1</div>
+          <div class="icn"><svg viewBox="0 0 30 18" width="28" height="18"><rect x="2" y="3" width="26" height="12" fill="#fff" stroke="#0f1620" stroke-width="1.4"/><path d="M9 12 v-7 M8 6 l1 -1 l1 1 M19 5 v7 M18 11 l1 1 l1 -1" stroke="#3a4452" stroke-width="1.2" fill="none"/></svg></div>
+          <div class="lbl">SW-DMZ<small>MS425-16 ×2 · L2</small></div>
+        </div>
+        <div class="dev" style="left:300px;top:720px;width:160px;">
+          <div class="role" style="background:#3b7a57;">RACK 2</div>
+          <div class="icn"><svg viewBox="0 0 30 18" width="28" height="18"><rect x="2" y="3" width="26" height="12" fill="#fff" stroke="#0f1620" stroke-width="1.4"/><path d="M9 12 v-7 M8 6 l1 -1 l1 1 M19 5 v7 M18 11 l1 1 l1 -1" stroke="#3a4452" stroke-width="1.2" fill="none"/></svg></div>
+          <div class="lbl">SW-SERVER<small>MS425-16 ×2 · L2</small></div>
+        </div>
+        <div class="dev" style="left:510px;top:720px;width:160px;">
+          <div class="role">RACK 4</div>
+          <div class="icn"><svg viewBox="0 0 30 18" width="28" height="18"><rect x="2" y="3" width="26" height="12" fill="#fff" stroke="#0f1620" stroke-width="1.4"/><path d="M9 12 v-7 M8 6 l1 -1 l1 1 M19 5 v7 M18 11 l1 1 l1 -1" stroke="#3a4452" stroke-width="1.2" fill="none"/></svg></div>
+          <div class="lbl">SW-BG<small>MS150-48T ×1 · data</small></div>
+        </div>
+
+        <div class="dev poe tight" style="left:680px;top:800px;width:120px;">
+          <div class="icn"><svg viewBox="0 0 30 18" width="26" height="18"><rect x="2" y="3" width="26" height="12" fill="#fff7ec" stroke="#0f1620" stroke-width="1.3"/><circle cx="6" cy="9" r="1.2" fill="#ea8a2c"/><circle cx="10" cy="9" r="1.2" fill="#ea8a2c"/><circle cx="14" cy="9" r="1.2" fill="#ea8a2c"/></svg></div>
+          <div class="lbl">PoE-1<small>MS150-24MP</small></div>
+        </div>
+        <div class="dev poe tight" style="left:680px;top:855px;width:120px;">
+          <div class="icn"><svg viewBox="0 0 30 18" width="26" height="18"><rect x="2" y="3" width="26" height="12" fill="#fff7ec" stroke="#0f1620" stroke-width="1.3"/></svg></div>
+          <div class="lbl">PoE-2<small>MS150-24MP</small></div>
+        </div>
+        <div class="dev poe tight" style="left:680px;top:910px;width:120px;">
+          <div class="icn"><svg viewBox="0 0 30 18" width="26" height="18"><rect x="2" y="3" width="26" height="12" fill="#fff7ec" stroke="#0f1620" stroke-width="1.3"/></svg></div>
+          <div class="lbl">PoE-3<small>MS150-48FP</small></div>
+        </div>
+        <div class="dev poe tight" style="left:680px;top:965px;width:120px;">
+          <div class="icn"><svg viewBox="0 0 30 18" width="26" height="18"><rect x="2" y="3" width="26" height="12" fill="#fff7ec" stroke="#0f1620" stroke-width="1.3"/></svg></div>
+          <div class="lbl">PoE-4<small>MS150-48FP</small></div>
+        </div>
+
+        <!-- ACCESS endpoints in server room area -->
+        <div class="dev endpoint tight" style="left:75px;top:910px;width:112px;">
+          <div class="icn"><svg viewBox="0 0 24 22" width="22" height="20"><rect x="4" y="3" width="16" height="16" fill="#fff" stroke="#0f1620"/><ellipse cx="12" cy="6" rx="6" ry="1.6" fill="#fff" stroke="#0f1620"/><path d="M6 10 h12 M6 13 h12 M6 16 h12" stroke="#a04ea0"/></svg></div>
+          <div class="lbl">Webserver<small>DMZ · VLAN 12</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:192px;top:910px;width:128px;">
+          <div class="icn"><svg viewBox="0 0 24 22" width="22" height="20"><rect x="4" y="3" width="16" height="16" fill="#fff" stroke="#0f1620"/><ellipse cx="12" cy="6" rx="6" ry="1.6" fill="#fff" stroke="#0f1620"/><path d="M6 10 h12 M6 13 h12 M6 16 h12" stroke="#a04ea0"/></svg></div>
+          <div class="lbl">Mail-gateway<small>DMZ · VLAN 12</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:325px;top:910px;width:114px;">
+          <div class="icn"><svg viewBox="0 0 24 22" width="22" height="20"><rect x="4" y="3" width="16" height="16" fill="#fff" stroke="#0f1620"/><ellipse cx="12" cy="6" rx="6" ry="1.6" fill="#fff" stroke="#0f1620"/><path d="M6 10 h12 M6 13 h12 M6 16 h12" stroke="#3b7a57"/></svg></div>
+          <div class="lbl">Hypervisors<small>6–9 · 30 VM</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:445px;top:910px;width:78px;">
+          <div class="icn"><svg viewBox="0 0 24 22" width="22" height="20"><rect x="4" y="3" width="16" height="16" fill="#fff" stroke="#0f1620"/><ellipse cx="12" cy="6" rx="6" ry="1.6" fill="#fff" stroke="#0f1620"/></svg></div>
+          <div class="lbl">DNS-srv<small>VLAN 11 (servers)</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:530px;top:910px;width:122px;">
+          <div class="icn"><svg viewBox="0 0 24 22" width="22" height="20"><rect x="4" y="3" width="16" height="16" fill="#fff" stroke="#0f1620"/><ellipse cx="12" cy="6" rx="6" ry="1.6" fill="#fff" stroke="#0f1620"/></svg></div>
+          <div class="lbl">Storage / Beheer<small>VLAN 10 / 11</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:520px;top:980px;width:145px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><rect x="3" y="3" width="18" height="10" fill="#fff" stroke="#0f1620"/><rect x="1" y="13" width="22" height="2" fill="#8892a0"/></svg></div>
+          <div class="lbl">Werkplekken BG<small>VLAN 100</small></div>
+        </div>
+
+        <!-- PoE endpoint clusters in access -->
+        <div class="dev endpoint tight" style="left:850px;top:990px;width:150px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><circle cx="12" cy="11" r="3.4" fill="#fff" stroke="#0f1620"/><path d="M6 8 q6 -6 12 0 M8 10 q4 -3 8 0" fill="none" stroke="#ea8a2c"/></svg></div>
+          <div class="lbl">11× MR46 / MR36 (BG)<small>VLAN 100 / 90</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:850px;top:1035px;width:150px;">
+          <div class="icn"><svg viewBox="0 0 22 22" width="20" height="20"><rect x="3" y="4" width="16" height="11" fill="#fff" stroke="#0f1620"/><rect x="7" y="15" width="8" height="3" fill="#fff" stroke="#0f1620"/><circle cx="11" cy="10" r="1.5" fill="#8957e8"/></svg></div>
+          <div class="lbl">VoIP-telefoons BG<small>VLAN 50</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:850px;top:1080px;width:150px;">
+          <div class="icn"><svg viewBox="0 0 22 22" width="20" height="20"><rect x="4" y="6" width="14" height="10" fill="#fff" stroke="#0f1620"/><circle cx="11" cy="11" r="2" fill="#b56b00"/></svg></div>
+          <div class="lbl">Toegangscontrole<small>VLAN 60</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:850px;top:1125px;width:150px;">
+          <div class="icn"><svg viewBox="0 0 22 22" width="20" height="20"><circle cx="11" cy="11" r="7" fill="#fff" stroke="#0f1620"/><circle cx="11" cy="11" r="3" fill="#3a3a3a"/></svg></div>
+          <div class="lbl">Cameras<small>VLAN 70</small></div>
+        </div>
+
+        <!-- Typical floor 1-5 -->
+        <div class="frame" style="left:1050px;top:695px;width:610px;height:400px;background:#f6f8fb88;">
+          <span class="frame-lbl">Typische etage 1–5 · NK-A linkervleugel · NK-B rechtervleugel · ×5</span>
+        </div>
+        <div style="position:absolute;left:1592px;top:707px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;color:var(--ink);background:#fff;border:1.4px solid var(--ink);padding:3px 7px;border-radius:4px;box-shadow:1.5px 1.5px 0 0 var(--ink);z-index:3;">×5 etages</div>
+
+        <div class="stacked-bg l2" style="left:1190px;top:780px;width:160px;height:170px;transform:translate(10px,10px);"></div>
+        <div class="stacked-bg" style="left:1190px;top:780px;width:160px;height:170px;transform:translate(5px,5px);"></div>
+        <div class="dev" style="left:1180px;top:770px;width:160px;">
+          <div class="role">NK-A</div>
+          <div class="icn"><svg viewBox="0 0 30 26" width="28" height="26"><rect x="3" y="3" width="24" height="6" fill="#fff7ec" stroke="#0f1620"/><rect x="3" y="11" width="24" height="6" fill="#fff" stroke="#0f1620"/><rect x="3" y="19" width="24" height="6" fill="#fff" stroke="#0f1620"/><circle cx="6" cy="6" r="1" fill="#ea8a2c"/><circle cx="10" cy="6" r="1" fill="#ea8a2c"/></svg></div>
+          <div class="lbl">NK-A stack<small>3× MS150 · VLAN 10/50/60/70/80/90/100</small></div>
+        </div>
+        <div style="position:absolute;left:1180px;top:835px;width:160px;font-family:'JetBrains Mono',monospace;font-size:9px;line-height:1.5;color:var(--ink-2);background:#fff;border:1px dashed var(--line);padding:5px 7px;border-radius:4px;z-index:2;">
+          24p PoE · MS150-24MP<br/>48p · MS150-48T<br/>48p · MS150-48T
+        </div>
+
+        <div class="stacked-bg l2" style="left:1440px;top:780px;width:160px;height:170px;transform:translate(10px,10px);"></div>
+        <div class="stacked-bg" style="left:1440px;top:780px;width:160px;height:170px;transform:translate(5px,5px);"></div>
+        <div class="dev" style="left:1440px;top:770px;width:160px;">
+          <div class="role">NK-B</div>
+          <div class="icn"><svg viewBox="0 0 30 26" width="28" height="26"><rect x="3" y="3" width="24" height="6" fill="#fff7ec" stroke="#0f1620"/><rect x="3" y="11" width="24" height="6" fill="#fff" stroke="#0f1620"/><rect x="3" y="19" width="24" height="6" fill="#fff" stroke="#0f1620"/><circle cx="6" cy="6" r="1" fill="#ea8a2c"/><circle cx="10" cy="6" r="1" fill="#ea8a2c"/></svg></div>
+          <div class="lbl">NK-B stack<small>3× MS150 · 10.x.1/24</small></div>
+        </div>
+        <div style="position:absolute;left:1440px;top:835px;width:160px;font-family:'JetBrains Mono',monospace;font-size:9px;line-height:1.5;color:var(--ink-2);background:#fff;border:1px dashed var(--line);padding:5px 7px;border-radius:4px;z-index:2;">
+          24p PoE · MS150-24MP<br/>48p · MS150-48T<br/>48p · MS150-48T
+        </div>
+
+        <div style="position:absolute;left:1352px;top:790px;width:78px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--fiber);line-height:1.45;z-index:2;">
+          <div style="border:1.5px dashed var(--fiber);border-radius:4px;padding:5px 4px;background:#f4fbf7;">
+            <b style="font-size:10px;">STIJG-<br/>SCHACHT</b><br/>BG → E5<br/>
+            <span style="color:var(--ink);font-weight:700;">24× fiber</span>
+          </div>
+        </div>
+
+        <div class="dev endpoint tight" style="left:1052px;top:980px;width:120px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><rect x="3" y="3" width="18" height="10" fill="#fff" stroke="#0f1620"/><rect x="1" y="13" width="22" height="2" fill="#8892a0"/></svg></div>
+          <div class="lbl">75 werkplekken<small>VLAN 100</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:1170px;top:980px;width:88px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><circle cx="12" cy="11" r="3.4" fill="#fff" stroke="#0f1620"/><path d="M6 8 q6 -6 12 0 M8 10 q4 -3 8 0" fill="none" stroke="#ea8a2c"/></svg></div>
+          <div class="lbl">6× MR46<small>VLAN 100 / 90</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:1262px;top:980px;width:98px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><circle cx="12" cy="11" r="3.4" fill="#fff" stroke="#0f1620"/><path d="M6 8 q6 -6 12 0 M8 10 q4 -3 8 0" fill="none" stroke="#ea8a2c"/></svg></div>
+          <div class="lbl">2× MR36<small>verg.zaal</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:1112px;top:1040px;width:118px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><rect x="3" y="6" width="18" height="7" fill="#fff" stroke="#0f1620"/><rect x="6" y="2" width="12" height="4" fill="#fff" stroke="#0f1620"/><rect x="6" y="11" width="12" height="5" fill="#fff" stroke="#0f1620"/></svg></div>
+          <div class="lbl">Pantry-printer<small>VLAN 80 · IoT</small></div>
+        </div>
+
+        <div class="dev endpoint tight" style="left:1370px;top:980px;width:120px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><rect x="3" y="3" width="18" height="10" fill="#fff" stroke="#0f1620"/><rect x="1" y="13" width="22" height="2" fill="#8892a0"/></svg></div>
+          <div class="lbl">75 werkplekken<small>VLAN 100</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:1490px;top:980px;width:88px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><circle cx="12" cy="11" r="3.4" fill="#fff" stroke="#0f1620"/><path d="M6 8 q6 -6 12 0 M8 10 q4 -3 8 0" fill="none" stroke="#ea8a2c"/></svg></div>
+          <div class="lbl">6× MR46<small>VLAN 100 / 90</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:1582px;top:980px;width:98px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><circle cx="12" cy="11" r="3.4" fill="#fff" stroke="#0f1620"/><path d="M6 8 q6 -6 12 0 M8 10 q4 -3 8 0" fill="none" stroke="#ea8a2c"/></svg></div>
+          <div class="lbl">2× MR36<small>verg.zaal</small></div>
+        </div>
+        <div class="dev endpoint tight" style="left:1432px;top:1040px;width:118px;">
+          <div class="icn"><svg viewBox="0 0 24 18" width="22" height="16"><rect x="3" y="6" width="18" height="7" fill="#fff" stroke="#0f1620"/><rect x="6" y="2" width="12" height="4" fill="#fff" stroke="#0f1620"/><rect x="6" y="11" width="12" height="5" fill="#fff" stroke="#0f1620"/></svg></div>
+          <div class="lbl">Pantry-printer<small>VLAN 80 · IoT</small></div>
+        </div>
+
+        <div class="pill fiber" style="left:880px;top:610px;">12× fiber · CORE-A → NK-A/NK-B (actief)</div>
+        <div class="pill fiber" style="left:880px;top:638px;">12× fiber · CORE-B → NK-A/NK-B (standby · STP)</div>
+
+        <div class="note" style="left:60px;top:1180px;width:760px;">
+          <b>Begane grond — speciale zones</b><br/>
+          4 racks in serverruimte · receptie/entreehal · publieksbalie (VLAN 40) · Statenzaal · kantine/restaurant · beveiliging &amp; bewaking · keuken/leveranciersingang.
+        </div>
+        <div class="note fiber" style="left:1050px;top:1180px;width:610px;">
+          <b>Fiber-backbone &amp; stijgschacht</b><br/>
+          24 fibers door centrale stijgschacht. Per NK: uplink-1 → CORE-A actief (STP root), uplink-2 → CORE-B standby. BG + E3-NKB: ook VLAN 40 op trunk.
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== LEGEND ===== -->
+    <div class="legend">
+
+      <div class="lcard">
+        <h3>Lijnkleuren</h3>
+        <div class="lines-legend">
+          <div class="row"><span class="swl" style="border-color:var(--fiber);"></span>Fiber backbone</div>
+          <div class="row"><span class="swl dashed" style="border-color:var(--fiber);"></span>Fiber standby (STP)</div>
+          <div class="row"><span class="swl" style="border-color:var(--trunk);"></span>Trunk-uplinks</div>
+          <div class="row"><span class="swl" style="border-color:var(--access);"></span>Access werkplekken</div>
+          <div class="row"><span class="swl" style="border-color:var(--poe);"></span>PoE naar APs / VoIP</div>
+          <div class="row"><span class="swl" style="border-color:var(--wan);"></span>WAN-lijnen</div>
+          <div class="row"><span class="swl dashed" style="border-color:var(--ha);"></span>HA-heartbeat</div>
+        </div>
+      </div>
+
+      <div class="lcard">
+        <h3>IP-logica</h3>
+        <div class="ip-block">
+          <b>2e octet</b>&nbsp;=&nbsp;VLAN-ID (functioneel)<br/>
+          &nbsp;&nbsp;<code>10</code> MGMT · <code>11</code> Servers · <code>100</code> Medew.<br/>
+          Geen per-etage of per-NK subnetten<br/>
+          <b>802.1X</b> bepaalt VLAN via Entra ID
+          <div class="ex">
+            <b>Voorbeeld</b> · <code>10.100.0.50</code><br/>
+            Medewerker VLAN 100 · ongeacht locatie
+          </div>
+        </div>
+      </div>
+
+      <div class="lcard wide">
+        <h3>VLAN-legenda</h3>
+        <div class="vlan-grid">
+          <div class="v"><span class="chip" style="background:var(--vlan10)">10</span><span>MGMT</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan20)">11</span><span>Servers</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan30)">12</span><span>DMZ</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan40)">15</span><span>WAN-Diginetwerk</span></div>
+          <div class="v"><span class="chip" style="background:var(--wan)">13</span><span>WAN-ISP-A</span></div>
+          <div class="v"><span class="chip" style="background:var(--wan)">14</span><span>WAN-ISP-B</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan100)">100</span><span>Medew. bekabeld</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan200)">40</span><span>Publiek-balie</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan300)">50</span><span>VoIP</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan400)">60</span><span>Toegangscontrole</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan500)">70</span><span>Cameras</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan600)">80</span><span>IoT</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan700)">90</span><span>Guest</span></div>
+          <div class="v"><span class="chip" style="background:var(--vlan800)">100</span><span>Medewerkers</span></div>
+          <div class="v"><span class="chip" style="background:#3a4452">999</span><span>Native</span></div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--ink-3);line-height:1.55;">
+          Subnets · Medewerkers <code style="background:#f3f5f8;padding:1px 4px;border-radius:3px;font-size:9.5px;color:var(--ink);">10.100.0.0/22</code> · Guest <code style="background:#f3f5f8;padding:1px 4px;border-radius:3px;font-size:9.5px;color:var(--ink);">10.90.0.0/21</code> · MGMT <code style="background:#f3f5f8;padding:1px 4px;border-radius:3px;font-size:9.5px;color:var(--ink);">10.10.0.0/24</code>
+        </div>
+      </div>
+
+      <div class="lcard wide">
+        <h3>Iconen-legenda</h3>
+        <div class="icon-grid">
+          <div class="ig">
+            <svg viewBox="0 0 30 22"><rect x="4" y="4" width="22" height="14" fill="#fff" stroke="#0f1620" stroke-width="1.4"/><path d="M0 7h4M0 11h4M0 15h4M26 7h4M26 11h4M26 15h4" stroke="#d23a3a" stroke-width="1.6"/></svg>
+            Firewall
+          </div>
+          <div class="ig">
+            <svg viewBox="0 0 32 22"><rect x="3" y="4" width="26" height="14" fill="#f0f6ff" stroke="#0f1620" stroke-width="1.4"/><path d="M8 14 L20 8 M20 8 l-3 0 M20 8 l0 3" stroke="#2a6fdb" stroke-width="1.4" fill="none"/></svg>
+            L3 switch
+          </div>
+          <div class="ig">
+            <svg viewBox="0 0 30 18"><rect x="2" y="3" width="26" height="12" fill="#fff" stroke="#0f1620" stroke-width="1.4"/><path d="M9 12 v-7 M8 6 l1 -1 l1 1 M19 5 v7 M18 11 l1 1 l1 -1" stroke="#3a4452" stroke-width="1.2" fill="none"/></svg>
+            L2 switch
+          </div>
+          <div class="ig">
+            <svg viewBox="0 0 30 18"><rect x="2" y="3" width="26" height="12" fill="#fff7ec" stroke="#0f1620" stroke-width="1.3"/><circle cx="6" cy="9" r="1.2" fill="#ea8a2c"/><circle cx="10" cy="9" r="1.2" fill="#ea8a2c"/><circle cx="14" cy="9" r="1.2" fill="#ea8a2c"/></svg>
+            PoE switch
+          </div>
+          <div class="ig">
+            <svg viewBox="0 0 24 18"><circle cx="12" cy="11" r="3.4" fill="#fff" stroke="#0f1620"/><path d="M6 8 q6 -6 12 0 M8 10 q4 -3 8 0" fill="none" stroke="#ea8a2c"/></svg>
+            Access Point
+          </div>
+          <div class="ig">
+            <svg viewBox="0 0 24 22"><rect x="4" y="3" width="16" height="16" fill="#fff" stroke="#0f1620"/><ellipse cx="12" cy="6" rx="6" ry="1.6" fill="#fff" stroke="#0f1620"/><path d="M6 10 h12 M6 13 h12 M6 16 h12" stroke="#888"/></svg>
+            Server
+          </div>
+          <div class="ig">
+            <svg viewBox="0 0 32 22"><path d="M7 17 q-5 0 -5 -4 q0 -4 5 -4 q1 -5 7 -5 q6 0 7 5 q6 0 6 4 q0 4 -6 4 z" fill="#fff" stroke="#d23a3a" stroke-width="1.4"/></svg>
+            Cloud / WAN
+          </div>
+          <div class="ig">
+            <svg viewBox="0 0 24 18"><rect x="3" y="3" width="18" height="10" fill="#fff" stroke="#0f1620"/><rect x="1" y="13" width="22" height="2" fill="#8892a0"/></svg>
+            Werkplek
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <div class="s-foot">
+    <span>NETWERKTOPOLOGIE · PROVINCIEHUIS UTRECHT · NWO-PHU-001 · Rev A · mei 2026</span>
+    <span>ICT TRIBE ALMERE / SLTN GROUP · two-tier · Cisco Meraki + FortiGate</span>
+  </div>
+
+</div>
+
+</body>
+</html>
