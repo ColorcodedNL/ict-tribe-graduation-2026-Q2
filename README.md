@@ -24,13 +24,13 @@ De opdracht is verstrekt door SLTN Group B.V. als onderdeel van het ICT Tribe Al
 
 Two-tier topologie zonder aparte distributielaag.
 
-- **Firewall** — FortiGate HA-cluster (actief/passief), SD-WAN met dubbele ISP + Diginetwerk
+- **Firewall** — HA-cluster (actief/passief), SD-WAN met dubbele ISP + Diginetwerk
 - **Core** — Twee L3 core switches (Core-A / Core-B) met HSRP gateway-redundantie
 - **Access** — Twee netwerkkasten per etage (NK-A / NK-B), elk met 2× 48-poorts GbE + 1× 24-poorts PoE switch
-- **WLAN** — Meraki AP's, WPA3-Enterprise (medewerkers) + WPA3-Personal met captive portal (gasten)
-- **VLAN-segmentatie** — 802.1X poortauthenticatie gekoppeld aan Microsoft Entra ID
-- **DHCP/DNS** — Verzorgd door de FortiGate per VLAN, met interne DNS-server in de serverruimte
-- **Simulatie** — EVE-NG lab met IOL L2/L3-images en FortiGate vVM; HSRP en inter-VLAN routing gevalideerd
+- **WLAN** — WPA3-Enterprise (medewerkers) + WPA3-Personal met captive portal (gasten)
+- **VLAN-segmentatie** — 802.1X poortauthenticatie gekoppeld aan centrale identiteitsdienst
+- **DHCP/DNS** — Verzorgd door de firewall per VLAN, met interne DNS-server in de serverruimte
+- **Simulatie** — EVE-NG lab; HSRP en inter-VLAN routing gevalideerd
 
 ---
 
