@@ -64,7 +64,7 @@ Two-tier topologie zonder aparte distributielaag.
 
 | Naam | LinkedIn |
 |---|---|
-| Bastiaan | [linkedin.com/in/colorcoded](https://www.linkedin.com/in/colorcoded/) |
+| Bastiaan van Oorde | [linkedin.com/in/colorcoded](https://www.linkedin.com/in/colorcoded/) |
 | Danny Peek | [linkedin.com/in/dannypeek](https://www.linkedin.com/in/dannypeek/) |
 | Robert Post | [linkedin.com/in/rm-post](https://www.linkedin.com/in/rm-post/) |
 | Shervino Hodge | [linkedin.com/in/shervino-hodge](https://www.linkedin.com/in/shervino-hodge/) |
